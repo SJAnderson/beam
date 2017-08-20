@@ -163,6 +163,26 @@ class DynamicDestinationsHelpers {
       return BigQueryHelpers.fromJsonString(jsonSchema.get(), TableSchema.class);
     }
   }
+  
+  static class ConstantTimePartitioningDestinations<T>
+      extends DelegatingDynamicDestinations<T, TableDestination> {
+
+    @Nullable
+    private final ValueProvider<String> jsonTimePartitioning;
+
+    ConstantTimePartitioningDestinations(DynamicDestinations<T, TableDestination> inner,
+        ValueProvider<String> jsonTimePartitioning) {
+      super(inner);
+      this.jsonTimePartitioning = jsonTimePartitioning;
+    }
+
+    @Override
+    public TableDestination getDestination(ValueInSingleWindow<T> element) {
+      TableDestination destination = super.getDestination(element);
+      return new TableDestination(destination.getTableSpec(), destination.getTableDescription(),
+          jsonTimePartitioning.get());
+    }
+  }
 
   /**
    * Takes in a side input mapping tablespec to json table schema, and always returns the
